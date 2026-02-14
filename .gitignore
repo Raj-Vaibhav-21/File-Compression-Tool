@@ -1,1 +1,11 @@
+# Build outputs
+compressor
+*.bin
+
+# macOS
 .DS_Store
+
+# Xcode user data
+File Compression Tool.xcodeproj/xcuserdata/
+File Compression Tool.xcodeproj/project.xcworkspace/xcuserdata/
+

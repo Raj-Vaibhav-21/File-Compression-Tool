@@ -1,8 +1,9 @@
 #include "huffman.h"
-
+#include <iostream>
 #include <fstream>
 #include <queue>
 #include <stdexcept> //used to include the standard library's exception classes for reporting errors through exceptions
+using std::cout;
 
 // ---------- Node Constructors ----------
 
@@ -17,23 +18,138 @@ Node::Node(uint64_t f, Node* l, Node* r)
 
 // ---------- Frequency Analyzer ----------
 
-std::array<uint64_t, 256> buildFrequencyTable(const std::string& filePath) {
-    std::array<uint64_t, 256> freq{};//freq{} initializes all array values to zero
-    freq.fill(0);//we fill freq{} with zeroes again to make it obvious & unambiguous
+std::array<uint64_t, 256> buildFrequencyTable(
+    const std::vector<unsigned char>& data
+) {
+    std::array<uint64_t, 256> freq{};
+    freq.fill(0);
 
-    std::ifstream file(filePath, std::ios::binary);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file");
-    }
-
-    unsigned char byte;
-    //reinterpret_cast<char*>(&byte) converts the address of byte (which is an unsigned char*) to a char*, which is what read() expects
-    while (file.read(reinterpret_cast<char*>(&byte), 1)) {
+    for (unsigned char byte : data) {
         freq[byte]++;
     }
 
     return freq;
 }
+// -------Compress Decompress-------
+std::vector<unsigned char> compress(
+    const std::vector<unsigned char>& input
+) {
+    if (input.empty()) return {};
+
+    // 1️⃣ Build frequency table
+    auto freq = buildFrequencyTable(input);
+    
+    int nonZero = 0;
+    for (int i = 0; i < 256; ++i)
+        if (freq[i] > 0)
+            nonZero++;
+
+    std::cout << "Unique symbols: " << nonZero << std::endl;
+
+    // 2️⃣ Build Huffman Tree
+    Node* root = buildHuffmanTree(freq);
+
+    // 3️⃣ Generate Codes
+    std::unordered_map<unsigned char, std::string> codeTable;
+    buildHuffmanCodes(root, "", codeTable);
+
+    // 4️⃣ Encode input into bit string
+    std::string bitStream;
+    for (unsigned char byte : input) {
+        bitStream += codeTable[byte];
+    }
+
+    // 5️⃣ Pack bits into bytes
+    std::vector<unsigned char> output;
+
+    // ----- HEADER -----
+    // Store frequency table (binary)
+    for (uint64_t value : freq) {
+        for (int i = 0; i < 8; ++i) {
+            output.push_back((value >> (i * 8)) & 0xFF);
+        }
+    }
+
+    // ----- BODY -----
+    unsigned char currentByte = 0;
+    int bitCount = 0;
+
+    for (char bit : bitStream) {
+        currentByte <<= 1;
+        if (bit == '1')
+            currentByte |= 1;
+
+        bitCount++;
+
+        if (bitCount == 8) {
+            output.push_back(currentByte);
+            currentByte = 0;
+            bitCount = 0;
+        }
+    }
+
+    // Handle leftover bits
+    if (bitCount > 0) {
+        currentByte <<= (8 - bitCount);
+        output.push_back(currentByte);
+    }
+
+    std::cout << "Input bytes: " << input.size() << std::endl;
+    std::cout << "Compressed bytes: " << output.size() << std::endl;
+
+    freeHuffmanTree(root);
+    return output;
+}
+
+
+std::vector<unsigned char> decompress(
+    const std::vector<unsigned char>& input
+) {
+    if (input.size() < 256 * 8) return {};
+
+    std::array<uint64_t, 256> freq{};
+    size_t index = 0;
+
+    // 1️⃣ Read frequency table from header
+    for (int i = 0; i < 256; ++i) {
+        uint64_t value = 0;
+        for (int j = 0; j < 8; ++j) {
+            value |= (uint64_t)input[index++] << (j * 8);
+        }
+        freq[i] = value;
+    }
+    uint64_t totalSymbols = 0;
+    for (uint64_t f : freq)
+        totalSymbols += f;
+
+
+    // 2️⃣ Rebuild tree
+    Node* root = buildHuffmanTree(freq);
+    if (!root) return {};
+
+    std::vector<unsigned char> output;
+    Node* current = root;
+
+    // 3️⃣ Decode bitstream
+    for (; index < input.size() && output.size() < totalSymbols; ++index) {
+        unsigned char byte = input[index];
+
+        for (int i = 7; i >= 0 && output.size() < totalSymbols; --i) {
+            bool bit = (byte >> i) & 1;
+            current = bit ? current->right : current->left;
+
+            if (!current->left && !current->right) {
+                output.push_back(current->byte);
+                current = root;
+            }
+        }
+    }
+
+
+    freeHuffmanTree(root);
+    return output;
+}
+
 
 
 // ---------- Huffman Tree Builder ----------
@@ -106,4 +222,5 @@ void freeHuffmanTree(Node* root) {
     freeHuffmanTree(root->right);
     delete root;
 }
+
 

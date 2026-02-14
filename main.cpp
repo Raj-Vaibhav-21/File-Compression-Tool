@@ -1,11 +1,10 @@
 #include <iostream>
+#include <vector>
 #include <string>
 
-// Your file handling code
 #include "file_io.h"
-
-// Compression logic from Person 1
 #include "huffman.h"
+
 
 /*
  =====================================

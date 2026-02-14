@@ -3,9 +3,9 @@
 
 #include <array>
 #include <string>
+#include <vector>
 #include <unordered_map>
 #include <cstdint> /* A standard C++ header file that provides fixed-width integer types, such as uint8_t, int32_t, uint64_t, etc. */
-
 
 // Huffman Tree Node
 struct Node {
@@ -19,9 +19,17 @@ struct Node {
 };
 
 // Frequency Analyzer
-std::array<uint64_t, 256> buildFrequencyTable(const std::string& filePath);
+std::array<uint64_t, 256> buildFrequencyTable(const std::vector<unsigned char>& data);
 /* Constructor for the Node struct
 Creates a node with the given symbol and frequency */
+
+std::vector<unsigned char> compress(
+    const std::vector<unsigned char>& input
+);
+
+std::vector<unsigned char> decompress(
+    const std::vector<unsigned char>& input
+);
 
 // Huffman Tree Builder
 Node* buildHuffmanTree(const std::array<uint64_t, 256>& freqTable);

@@ -1,9 +1,5 @@
 #include "file_io.h"
-
-// Needed to work with files
 #include <fstream>
-
-// Used for error messages
 #include <stdexcept>
 
 /*

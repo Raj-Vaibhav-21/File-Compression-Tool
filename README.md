@@ -1,120 +1,133 @@
-File Compression Tool (C++)
+File Compression Tool (C++17)
 
-A lightweight and efficient file compression & decompression tool built in C++, inspired by ZIP-like compression systems.
-This project is designed to deepen understanding of systems programming, data structures, and low-level file handling.
+A lightweight file compression & decompression tool built from scratch in C++17, using Huffman Coding.
 
-Features
+I built this project to better understand how real-world compression tools (like ZIP/GZIP) work internally — especially the systems-level details like binary file handling, bit manipulation, and tree-based encoding.
 
-✔️ Compress any file into a smaller binary format
+This is a fully working, lossless compressor.
 
-✔️ Decompress it back to original
+✨ Features
 
-✔️ Uses Huffman Coding (lossless compression algorithm)
+Compress any file into a binary format
 
-✔️ Works for text, logs, source code, binaries, etc.
+Decompress back to the exact original file
 
-✔️ Efficient bit-level encoding/decoding
+Lossless compression using Huffman Coding
 
-✔️ Clean, modular C++ codebase
+Works for text files, logs, source code, and binary files
 
-How It Works (High-Level Overview)
+Manual bit-level encoding and decoding
 
+Clean and modular C++ implementation
+
+🧠 How It Works
 1. Frequency Analysis
 
-The tool reads the file byte by byte and counts how many times each character appears.
+The program reads the file byte-by-byte and counts how often each of the 256 possible byte values appears.
 
 2. Huffman Tree Construction
 
-Using those frequencies, it builds a Huffman Tree (a min-heap based greedy algorithm).
+Using a min-heap (std::priority_queue), it builds a Huffman tree based on frequency (greedy algorithm).
 
-3. Bit Encoding
+Frequent bytes → shorter bit codes
+Rare bytes → longer bit codes
 
-Each character receives a unique variable-length bit pattern:
+3. Encoding
 
-Frequent characters → shorter codes
+Each byte is replaced with its Huffman bit pattern.
+Bits are manually packed into bytes for efficient storage.
 
-Rare characters → longer codes
+4. Compressed File Format
 
-This reduces total file size.
+The compressed file contains:
 
-4. Binary Output Creation
+A header (full 256-entry frequency table, 2048 bytes total)
 
-The compressor writes:
+The encoded bitstream
 
-Header containing the frequency table
-
-Encoded bitstream of the file
+Because the frequency table is stored, the decompressor can rebuild the exact same Huffman tree.
 
 5. Decompression
 
-Reads the header → rebuilds the Huffman tree → decodes the bitstream → restores the original file exactly.
+Read frequency table
 
-Tech Stack
+Rebuild Huffman tree
+
+Decode bitstream
+
+Restore original file exactly
+
+🛠 Tech Stack
 
 C++17
 
-STL: priority_queue, unordered_map, vector, fstream
+STL (vector, array, priority_queue, unordered_map, fstream)
 
-Bit manipulation
+Manual bit manipulation
 
-System-level file handling
+Binary-safe file I/O
 
-Project Structure
-/FileCompressionTool
-│── src/
-│   ├── main.cpp
-│   ├── compressor.cpp
-│   ├── compressor.hpp
-│   ├── huffman.cpp
-│   ├── huffman.hpp
-│── build/
+📁 Project Structure
+File-Compression-Tool/
+│── main.cpp
+│── huffman.cpp
+│── huffman.h
+│── file_io.cpp
+│── file_io.h
 │── README.md
+│── LICENSE
 
-Usage
-Compile
-g++ -std=c++17 src/*.cpp -o compressor
+🔨 Build
+g++ main.cpp file_io.cpp huffman.cpp -std=c++17 -O2 -Wall -Wextra -o compressor
 
-Compress a file
-./compressor -c input.txt output.bin
+▶️ Usage
+Compress
+./compressor compress input.txt output.bin
 
-Decompress a file
-./compressor -d output.bin restored.txt
+Decompress
+./compressor decompress output.bin restored.txt
 
-Example
+📊 Example
 
-Input file: 500 KB
-Compressed output: 130 KB
-Savings: ~74% reduction
+Compressing a file containing 1,000,000 repeated characters:
 
-(Actual compression varies by file type.)
+Unique symbols: 1
+Input bytes: 1000000
+Compressed bytes: 127048
 
-Learning Outcomes
 
-This project helps you understand:
+~87% size reduction.
 
-How real-world compression tools (ZIP, GZIP) work internally
+Compression ratio depends on how repetitive the data is.
 
-File I/O at a low level
+🎓 What I Learned
 
-Memory management & bit operations
+Building this helped me understand:
 
-Trees, heaps, greedy algorithms
+How Huffman coding actually works under the hood
 
-How system utilities are built in C++
+How compression tools store metadata (headers)
 
-Perfect project for:
+Bit-level packing and unpacking
 
-System programming
+Tree construction using heaps
 
-Resume building
+Binary file handling in C++
 
-Preparing for C++ development roles
+Writing small system utilities from scratch
 
-Contributions
+🚀 Possible Improvements
 
-Pull requests and suggestions are welcome!
-Feel free to open an issue to discuss improvements.
+Store only used symbols instead of full 256-entry header
 
-License
+Canonical Huffman codes
 
-MIT License.
+Streaming compression (avoid full in-memory bitstring)
+
+Performance benchmarking
+
+Archive multiple files
+
+📜 License
+
+MIT License
