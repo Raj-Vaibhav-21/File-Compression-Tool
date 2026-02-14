@@ -30,7 +30,8 @@ std::array<uint64_t, 256> buildFrequencyTable(
 
     return freq;
 }
-// -------Compress Decompress-------
+
+// -------Compress-------
 std::vector<unsigned char> compress(
     const std::vector<unsigned char>& input
 ) {
@@ -39,6 +40,7 @@ std::vector<unsigned char> compress(
     // 1️⃣ Build frequency table
     auto freq = buildFrequencyTable(input);
     
+    //counting how many unique symbols/characters actually appear in the input data
     int nonZero = 0;
     for (int i = 0; i < 256; ++i)
         if (freq[i] > 0)
@@ -63,7 +65,8 @@ std::vector<unsigned char> compress(
     std::vector<unsigned char> output;
 
     // ----- HEADER -----
-    // Store frequency table (binary)
+    //Storing the frequency table with the compressed data
+    //This table is needed during decompression to reconstruct the Huffman tree
     for (uint64_t value : freq) {
         for (int i = 0; i < 8; ++i) {
             output.push_back((value >> (i * 8)) & 0xFF);
@@ -71,8 +74,8 @@ std::vector<unsigned char> compress(
     }
 
     // ----- BODY -----
-    unsigned char currentByte = 0;
-    int bitCount = 0;
+    unsigned char currentByte = 0;//Temporarily stores bits as you build up each byte
+    int bitCount = 0;// Counts how many bits you’ve put into currentByte
 
     for (char bit : bitStream) {
         currentByte <<= 1;
@@ -101,7 +104,7 @@ std::vector<unsigned char> compress(
     return output;
 }
 
-
+// -------Decompress-------
 std::vector<unsigned char> decompress(
     const std::vector<unsigned char>& input
 ) {
@@ -138,6 +141,10 @@ std::vector<unsigned char> decompress(
             bool bit = (byte >> i) & 1;
             current = bit ? current->right : current->left;
 
+        /*  When you reach a leaf node (no left/right child), you’ve fully decoded
+            one symbol
+            Add the decoded symbol (current->byte) to the output
+            Reset current to the root to start decoding the next symbol  */
             if (!current->left && !current->right) {
                 output.push_back(current->byte);
                 current = root;
@@ -149,7 +156,6 @@ std::vector<unsigned char> decompress(
     freeHuffmanTree(root);
     return output;
 }
-
 
 
 // ---------- Huffman Tree Builder ----------

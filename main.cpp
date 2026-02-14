@@ -1,35 +1,13 @@
 #include <iostream>
 #include <vector>
 #include <string>
-
+#include <iomanip>
 #include "file_io.h"
 #include "huffman.h"
 
 
-/*
- =====================================
- HOW TO RUN THIS PROGRAM:
- =====================================
-
- compress input.txt output.huff
- decompress input.huff output.txt
-*/
-
 int main(int argc, char* argv[])
 {
-    /*
-     argc = argument count
-     argv = argument values
-
-     Example:
-     compress input.txt output.huff
-
-     argc = 4
-     argv[0] = program name
-     argv[1] = "compress"
-     argv[2] = "input.txt"
-     argv[3] = "output.huff"
-    */
 
     // Step 1: Check correct number of arguments
     if (argc != 4)
@@ -80,8 +58,38 @@ int main(int argc, char* argv[])
 
         // Step 5: Save result into output file
         writeBinaryFile(outputFile, outputData);
+        
+        // Step 6: Show compression stats (only for compression mode)
+        if (mode == "compress")
+        {
+            size_t originalSize = inputData.size();
+            size_t compressedSize = outputData.size();
 
-        // Step 6: Success message
+            if (originalSize == 0)
+            {
+                std::cout << "Empty file. Nothing to compress.\n";
+            }
+            
+            else
+            {   //Compression Report
+                double spaceSavedPercent =
+                    ((double)(originalSize - compressedSize) / originalSize) * 100.0;
+
+                double compressionRatio =
+                    (double)compressedSize / originalSize;
+
+                std::cout << "\nCompression Report\n";
+                std::cout << "------------------\n";
+                std::cout << "Original Size : " << originalSize << " bytes\n";
+                std::cout << "Compressed Size : " << compressedSize << " bytes\n";
+                std::cout << "Compresion Percentage : "
+                          << std::fixed << std::setprecision(2)
+                          << spaceSavedPercent << "%\n";
+                std::cout << "Compression Ratio : "
+                          << compressionRatio << "\n";
+            }
+        }
+
         std::cout << "Done! File processed successfully.\n";
     }
     catch (const std::exception& e)

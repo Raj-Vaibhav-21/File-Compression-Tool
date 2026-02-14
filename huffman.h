@@ -23,10 +23,12 @@ std::array<uint64_t, 256> buildFrequencyTable(const std::vector<unsigned char>& 
 /* Constructor for the Node struct
 Creates a node with the given symbol and frequency */
 
+//Takes a vector of bytes(input) and returns the compressed data
 std::vector<unsigned char> compress(
     const std::vector<unsigned char>& input
 );
 
+//Takes the vector of compressed data and reconstructs the original, uncompressed data
 std::vector<unsigned char> decompress(
     const std::vector<unsigned char>& input
 );
