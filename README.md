@@ -87,18 +87,13 @@ Compress
 Decompress
 ./compressor decompress output.bin restored.txt
 
-📊 Example
+📊 Example Output:
 
-Compressing a file containing 1,000,000 repeated characters:
+Original Size   : 100000000 bytes
+Compressed Size : 32694356 bytes
+Compression Percentage : 67.31%
+Compression Ratio : 0.33
 
-Unique symbols: 1
-Input bytes: 1000000
-Compressed bytes: 127048
-
-
-~87% size reduction.
-
-Compression ratio depends on how repetitive the data is.
 
 🎓 What I Learned
 
