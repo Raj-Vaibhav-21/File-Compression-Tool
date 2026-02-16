@@ -39,7 +39,7 @@ std::vector<unsigned char> compress(
 
     // 1️⃣ Build frequency table
     auto freq = buildFrequencyTable(input);
-    
+
     //counting how many unique symbols/characters actually appear in the input data
     int nonZero = 0;
     for (int i = 0; i < 256; ++i)
@@ -64,38 +64,40 @@ std::vector<unsigned char> compress(
     // 5️⃣ Pack bits into bytes
     std::vector<unsigned char> output;
 
-    // ----- HEADER -----
-    //Storing the frequency table with the compressed data
-    //This table is needed during decompression to reconstruct the Huffman tree
+    // 1️⃣ Write header
     for (uint64_t value : freq) {
         for (int i = 0; i < 8; ++i) {
             output.push_back((value >> (i * 8)) & 0xFF);
         }
     }
-
-    // ----- BODY -----
-    unsigned char currentByte = 0;//Temporarily stores bits as you build up each byte
-    int bitCount = 0;// Counts how many bits you’ve put into currentByte
-
+    // 2️⃣ Reserve space for validBits (temporary placeholder)
+    output.push_back(0);  // we’ll overwrite later
+    size_t validBitsPosition = output.size() - 1;
+    // 3️⃣ Pack bitstream
+    unsigned char currentByte = 0;
+    int bitCount = 0;
     for (char bit : bitStream) {
         currentByte <<= 1;
         if (bit == '1')
             currentByte |= 1;
-
         bitCount++;
-
         if (bitCount == 8) {
             output.push_back(currentByte);
             currentByte = 0;
             bitCount = 0;
         }
     }
-
-    // Handle leftover bits
+    unsigned char validBitsInLastByte;
     if (bitCount > 0) {
         currentByte <<= (8 - bitCount);
         output.push_back(currentByte);
+        validBitsInLastByte = bitCount;
+    } else {
+        validBitsInLastByte = 8;  // last byte fully used
     }
+    // Overwrite placeholder with real value
+    output[validBitsPosition] = validBitsInLastByte;
+
 
     std::cout << "Input bytes: " << input.size() << std::endl;
     std::cout << "Compressed bytes: " << output.size() << std::endl;
@@ -111,16 +113,19 @@ std::vector<unsigned char> decompress(
     if (input.size() < 256 * 8) return {};
 
     std::array<uint64_t, 256> freq{};
-    size_t index = 0;
 
     // 1️⃣ Read frequency table from header
     for (int i = 0; i < 256; ++i) {
         uint64_t value = 0;
         for (int j = 0; j < 8; ++j) {
-            value |= (uint64_t)input[index++] << (j * 8);
+            value |= (uint64_t)input[i * 8 + j] << (j * 8);
         }
         freq[i] = value;
     }
+    size_t headerSize = 256 * 8;
+    unsigned char validBitsInLastByte = input[headerSize];
+    size_t index = headerSize + 1;
+
     uint64_t totalSymbols = 0;
     for (uint64_t f : freq)
         totalSymbols += f;
@@ -134,23 +139,41 @@ std::vector<unsigned char> decompress(
     Node* current = root;
 
     // 3️⃣ Decode bitstream
-    for (; index < input.size() && output.size() < totalSymbols; ++index) {
-        unsigned char byte = input[index];
+    size_t bitstreamStart = index;
+    size_t bitstreamEnd = input.size();
 
-        for (int i = 7; i >= 0 && output.size() < totalSymbols; --i) {
+    for (size_t byteIndex = bitstreamStart; byteIndex < bitstreamEnd; ++byteIndex) {
+        unsigned char byte = input[byteIndex];
+
+        int bitsToRead = 8;
+
+        // If this is the last byte
+        if (byteIndex == bitstreamEnd - 1) {
+            bitsToRead = validBitsInLastByte;
+        }
+
+        for (int i = 7; i >= 8 - bitsToRead; --i) {
             bool bit = (byte >> i) & 1;
             current = bit ? current->right : current->left;
 
-        /*  When you reach a leaf node (no left/right child), you’ve fully decoded
-            one symbol
-            Add the decoded symbol (current->byte) to the output
-            Reset current to the root to start decoding the next symbol  */
+            if (!current) {
+                std::cerr << "Traversal error\n";
+                freeHuffmanTree(root);
+                return {};
+            }
+
             if (!current->left && !current->right) {
                 output.push_back(current->byte);
+                if (output.size() == totalSymbols) {
+                    freeHuffmanTree(root);
+                    return output;   // HARD STOP
+                }
                 current = root;
             }
         }
     }
+
+
 
 
     freeHuffmanTree(root);

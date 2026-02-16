@@ -72,8 +72,9 @@ int main(int argc, char* argv[])
             
             else
             {   //Compression Report
-                double spaceSavedPercent =
-                    ((double)(originalSize - compressedSize) / originalSize) * 100.0;
+                double compressionPercentage =
+                    (1.0 - (double)compressedSize / originalSize) * 100.0;
+
 
                 double compressionRatio =
                     (double)compressedSize / originalSize;
@@ -84,7 +85,7 @@ int main(int argc, char* argv[])
                 std::cout << "Compressed Size : " << compressedSize << " bytes\n";
                 std::cout << "Compresion Percentage : "
                           << std::fixed << std::setprecision(2)
-                          << spaceSavedPercent << "%\n";
+                          << compressionPercentage << "%\n";
                 std::cout << "Compression Ratio : "
                           << compressionRatio << "\n";
             }
